@@ -1,8 +1,15 @@
 import ssl
 from pprint import pprint
+from typing import Dict, Union, Any, List
 
 import toml
 import socket
+
+import schlagdenabi_Runde
+
+stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
+
+admin = 'yarissi'
 
 
 def send(irc: ssl.SSLSocket, message: str):
@@ -17,13 +24,13 @@ def send_pong(irc: ssl.SSLSocket):
     send(irc, 'PONG :tmi.twitch.tv')
 
 
-def getName(irc: ssl.SSLSocket, raw_message: str):
+def getName(raw_message: str):
     components = raw_message.split()
     user, host = components[0].split('!')[1].split('@')
     return user
 
 
-def getMessage(irc: ssl.SSLSocket, raw_message: str):
+def getMessage(raw_message: str):
     components = raw_message.split()
     message = ' '.join(components[3:])[1:]
     return message
@@ -37,63 +44,51 @@ def parseNumber(msg):
         return None
 
 
-def handle_chat(irc: ssl.SSLSocket, raw_message: str):
+def handle_chat(raw_message: str):
     components = raw_message.split()
 
     user, host = components[0].split('!')[1].split('@')
     channel = components[2]
     message = ' '.join(components[3:])[1:]
 
-    if user == 'yarissi' and message == "start":
-        return True
+    if user == admin and message == "start":
+        return 'start'
+    if message == "!stand":
+        return "!stand"
+    if user == admin and message == "!reset":
+        return "!reset"
+    if user == admin and message == "!endstand":
+        return "!endstand"
     return False
 
 
-def collectData(irc: ssl.SSLSocket):
-    users = []
-    numbers = []
-    while True:
-        data = irc.recv(1024)
-        raw_message = data.decode('UTF-8')
-
-        for line in raw_message.splitlines():
-            if line.startswith('PING :tmi.twitch.tv'):
-                send_pong(irc)
-            else:
-                components = line.split()
-                command = components[1]
-
-                if command == 'PRIVMSG':
-                    message = getMessage(irc, line)
-                    name = getName(irc, line)
-                    if name == 'yarissi' and message == 'ende':
-                        return users, numbers
-                    number = parseNumber(message)
-                    if name not in users and number is not None:
-                        users.append(name)
-                        numbers.append(number)
-                    pprint(users)
-                    pprint(numbers)
+def schlagdenabi(irc):
+    users, numbers = schlagdenabi_Runde.collectData(irc)
+    solution = schlagdenabi_Runde.collectSolution(irc)
+    winnerList, equal = schlagdenabi_Runde.determineWinner(users, numbers, solution)
+    gewinner = ' '.join(winnerList)
+    if len(winnerList) == 1:
+        msg = "/me Der Gewinner ist: " + gewinner
+        send_chat(irc, msg, channel_name)
+    if len(winnerList) > 1:
+        msg = "/me Die Gewinner sind: " + gewinner
+        send_chat(irc, msg, channel_name)
+    return winnerList, equal
 
 
-def collectSolution(irc: ssl.SSLSocket):
-    while True:
-        data = irc.recv(1024)
-        raw_message = data.decode('UTF-8')
+def CalculateStand(irc, channel_name):
+    if len(stand) == 0:
+        send_chat(irc, 'Es gibt noch keinen Spielstand', channel_name)
+    else:
+        spielstand: str = ""
+        for key in stand:
+            punktePerson = str(key) + " = " + str(stand.get(key)) + ", "
+            spielstand = spielstand + punktePerson
+        send_chat(irc, spielstand, channel_name)
 
-        for line in raw_message.splitlines():
-            if line.startswith('PING :tmi.twitch.tv'):
-                send_pong(irc)
-            else:
-                components = line.split()
-                command = components[1]
 
-                if command == 'PRIVMSG':
-                    name = getName(irc, line)
-                    number = parseNumber(getMessage(irc, line))
-                    if name == 'yarissi' and number is not None:
-                        pprint(number)
-                        return number
+def getstand():
+    return stand
 
 
 if __name__ == '__main__':
@@ -113,8 +108,7 @@ if __name__ == '__main__':
     send(irc, f'NICK {bot_username}')
     send(irc, f'JOIN #{channel_name}')
 
-    send_chat(irc, 'Das ist ein Test', channel_name)
-
+    send_chat(irc, 'Bot is running', channel_name)
 
     while True:
         data = irc.recv(1024)
@@ -125,13 +119,27 @@ if __name__ == '__main__':
                 send_pong(irc)
             else:
                 components = line.split()
-                command = components[1]
+                text = components[1]
 
-                if command == 'PRIVMSG':
-                    start = handle_chat(irc, line)
-
-                    if start:
-                        users, numbers = collectData(irc)
-                        solution = collectSolution(irc)
-
-
+                if text == 'PRIVMSG':
+                    command = handle_chat(line)
+                    pprint(command)
+                    if command == 'start':
+                        send_chat(irc, 'derabiRraga', channel_name)
+                        user, equal = schlagdenabi(irc)
+                        for winner in user:
+                            if winner not in stand:
+                                if equal:
+                                    stand[winner] = 2
+                                else:
+                                    stand[winner] = 1
+                            else:
+                                if equal:
+                                    stand[winner] = stand.get(winner) + 2
+                                else:
+                                    stand[winner] = stand.get(winner) + 1
+                    if command == '!stand':
+                        CalculateStand(irc, channel_name)
+                    if command == '!reset':
+                        send_chat(irc, 'Reset erfolgreich', channel_name)
+                        stand.clear()
