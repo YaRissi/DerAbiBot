@@ -2,7 +2,6 @@ import ssl
 from pprint import pprint
 
 import toml
-import socket
 
 import twitch
 
@@ -25,12 +24,12 @@ def collectSolution(irc: ssl.SSLSocket):
                 command = components[1]
 
                 if command == 'PRIVMSG':
-                    if "!stand" == twitch.getMessage(line):
-                        twitch.CalculateStand(irc, channel_name)
+                    if "!stand" == twitch.getMessage(line).split(" ")[0]:
+                        twitch.CalculateStand(irc, channel_name, twitch.getMessage(line))
                     name = twitch.getName(line)
                     number = twitch.parseNumber(twitch.getMessage(line))
                     if name == twitch.admin and number is not None:
-                        pprint(number)
+                        pprint("Lösung: " + str(number))
                         return number
 
 
@@ -51,9 +50,9 @@ def collectData(irc: ssl.SSLSocket):
                 if command == 'PRIVMSG':
                     message = twitch.getMessage(line)
                     name = twitch.getName(line)
-                    if "!stand" == message:
-                        twitch.CalculateStand(irc, channel_name)
-                    if name == twitch.admin and message == 'ende':
+                    if "!stand" == twitch.getMessage(line).split(" ")[0]:
+                        twitch.CalculateStand(irc, channel_name, twitch.getMessage(line))
+                    if name == twitch.admin and (message == 'ende' or message == 'Ende' or message == 'ENDE'):
                         return users, numbers
                     number = twitch.parseNumber(message)
                     if name not in users and number is not None:
@@ -64,28 +63,23 @@ def collectData(irc: ssl.SSLSocket):
 
 
 def determineWinner(users: list, numbers: list, solution: int):
-    dif = 10000
+    actualDifference = float('inf')
     WinnerIndex = []
-    length = len(numbers)
     i = 0
-    while i < length:
-        deff = solution - numbers[i]
-        deff = abs(deff)
-        if deff < dif:
-            dif = deff
+    for value in numbers:
+        DifferenceOfValue = abs(solution - value)
+        if DifferenceOfValue < actualDifference:
+            actualDifference = DifferenceOfValue
             if len(WinnerIndex) > 0:
                 WinnerIndex.clear()
-            WinnerIndex.append(numbers[i])
-        elif deff == dif:
-            WinnerIndex.append(numbers[i])
+            WinnerIndex.append(i)
+        elif DifferenceOfValue == actualDifference:
+            WinnerIndex.append(i)
         i += 1
     winner = []
-    ind = 0
     equal = False
-    for y in numbers:
-        if y == WinnerIndex[0]:
-            winner.append(users[ind])
-        ind = ind + 1
-    if WinnerIndex[0] == solution:
+    for index in WinnerIndex:
+        winner.append(users[index])
+    if numbers[WinnerIndex[0]] == solution:
         equal = True
     return winner, equal

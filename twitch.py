@@ -5,9 +5,9 @@ from typing import Dict, Union, Any, List
 import toml
 import socket
 
-import schlagdenabi_Runde
+import json
 
-stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
+import schlagdenabi_Runde
 
 admin = 'yarissi'
 
@@ -51,9 +51,9 @@ def handle_chat(raw_message: str):
     channel = components[2]
     message = ' '.join(components[3:])[1:]
 
-    if user == admin and message == "start":
+    if user == admin and (message == "start" or message == "Start" or message == "START"):
         return 'start'
-    if message == "!stand":
+    if message.split(" ")[0] == "!stand":
         return "!stand"
     if user == admin and message == "!reset":
         return "!reset"
@@ -64,27 +64,48 @@ def handle_chat(raw_message: str):
 
 def schlagdenabi(irc):
     users, numbers = schlagdenabi_Runde.collectData(irc)
+    if len(users) == 0:
+        return None, None
     solution = schlagdenabi_Runde.collectSolution(irc)
     winnerList, equal = schlagdenabi_Runde.determineWinner(users, numbers, solution)
     gewinner = ' '.join(winnerList)
     if len(winnerList) == 1:
-        msg = "/me Der Gewinner ist: " + gewinner
+        if equal:
+            msg = "/me Der Gewinner mit Punktlandung ist: " + gewinner
+        else:
+            msg = "/me Der Gewinner ist: " + gewinner
         send_chat(irc, msg, channel_name)
     if len(winnerList) > 1:
-        msg = "/me Die Gewinner sind: " + gewinner
+        if equal:
+            msg = "/me Die Gewinner mit Punktlandung sind: " + gewinner
+        else:
+            msg = "/me Die Gewinner sind: " + gewinner
         send_chat(irc, msg, channel_name)
     return winnerList, equal
 
 
-def CalculateStand(irc, channel_name):
+def CalculateStand(irc, channel_name, line):
+    with open('stand.json', 'r') as fp:
+        stand = json.load(fp)
     if len(stand) == 0:
         send_chat(irc, 'Es gibt noch keinen Spielstand', channel_name)
+    elif len(line.split(" ")) == 2:
+        key = line.split(" ")[1]
+        if key in stand.keys():
+            punkteUser = str(key) + " = " + str(stand[key])
+            send_chat(irc, punkteUser, channel_name)
+        else:
+            CalculateStand(irc, channel_name, line.split(" ")[0])
     else:
-        spielstand: str = ""
-        for key in stand:
-            punktePerson = str(key) + " = " + str(stand.get(key)) + ", "
+        spielstand = ""
+        for key in sorted(stand.items(), key=lambda item: item[1], reverse=True):
+            name = str(key).split("'")[1]
+            punkte = str(key).split(", ")[1].split(")")[0]
+            punktePerson = name + " = " + punkte + " "
             spielstand = spielstand + punktePerson
         send_chat(irc, spielstand, channel_name)
+    with open("stand.json", "w") as fp:
+        json.dump(stand, fp)
 
 
 def getstand():
@@ -110,6 +131,11 @@ if __name__ == '__main__':
 
     send_chat(irc, 'Bot is running', channel_name)
 
+    stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
+
+    with open("stand.json", "w") as fp:
+        json.dump(stand, fp)
+
     while True:
         data = irc.recv(1024)
         raw_message = data.decode('UTF-8')
@@ -123,23 +149,31 @@ if __name__ == '__main__':
 
                 if text == 'PRIVMSG':
                     command = handle_chat(line)
-                    pprint(command)
                     if command == 'start':
                         send_chat(irc, 'derabiRraga', channel_name)
                         user, equal = schlagdenabi(irc)
-                        for winner in user:
-                            if winner not in stand:
-                                if equal:
-                                    stand[winner] = 2
+                        if user is not None:
+                            with open('stand.json', 'r') as fp:
+                                stand = json.load(fp)
+                            for winner in user:
+                                if winner not in stand:
+                                    if equal:
+                                        stand[winner] = 2
+                                    else:
+                                        stand[winner] = 1
                                 else:
-                                    stand[winner] = 1
-                            else:
-                                if equal:
-                                    stand[winner] = stand.get(winner) + 2
-                                else:
-                                    stand[winner] = stand.get(winner) + 1
+                                    if equal:
+                                        stand[winner] = stand.get(winner) + 2
+                                    else:
+                                        stand[winner] = stand.get(winner) + 1
+                            with open("stand.json", "w") as fp:
+                                json.dump(stand, fp)
+                        else:
+                            send_chat(irc, "Ach be keiner hat mitgemacht", channel_name)
                     if command == '!stand':
-                        CalculateStand(irc, channel_name)
+                        CalculateStand(irc, channel_name, getMessage(line))
                     if command == '!reset':
-                        send_chat(irc, 'Reset erfolgreich', channel_name)
                         stand.clear()
+                        with open("stand.json", "w") as fp:
+                            json.dump(stand, fp)
+                        send_chat(irc, 'Reset erfolgreich', channel_name)
