@@ -3,3 +3,4 @@ venv
 out
 
 ressources/config.toml
+ressources/stand.json
