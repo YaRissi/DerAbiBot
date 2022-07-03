@@ -1,13 +1,12 @@
 import ssl
-from pprint import pprint
-from typing import Dict, Union, Any, List
+from typing import Union, Any
 
 import toml
 import socket
 
 import json
 
-import schlagdenabi_Runde
+from TwitchCommands import schlagdenabi_Runde
 
 admin = 'yarissi'
 
@@ -85,14 +84,13 @@ def schlagdenabi(irc):
 
 
 def CalculateStand(irc, channel_name, line):
-    with open('stand.json', 'r') as fp:
-        stand = json.load(fp)
+    stand = load_Stand()
     if len(stand) == 0:
         send_chat(irc, 'Es gibt noch keinen Spielstand', channel_name)
     elif len(line.split(" ")) == 2:
-        key = line.split(" ")[1]
+        key = str(line.split(" ")[1]).lower()
         if key in stand.keys():
-            punkteUser = str(key) + " = " + str(stand[key])
+            punkteUser = str(key).lower() + " = " + str(stand[key])
             send_chat(irc, punkteUser, channel_name)
         else:
             CalculateStand(irc, channel_name, line.split(" ")[0])
@@ -104,8 +102,33 @@ def CalculateStand(irc, channel_name, line):
             punktePerson = name + " = " + punkte + " "
             spielstand = spielstand + punktePerson
         send_chat(irc, spielstand, channel_name)
-    with open("stand.json", "w") as fp:
+    write_stand(stand)
+
+
+def load_Stand():
+    with open('ressources/stand.json', 'r') as fp:
+        return json.load(fp)
+
+
+def write_stand(stand):
+    with open("ressources/stand.json", "w") as fp:
         json.dump(stand, fp)
+
+
+def give_Winner_Points(user, equal):
+    stand = load_Stand()
+    for winner in user:
+        if winner not in stand:
+            if equal:
+                stand[winner] = 2
+            else:
+                stand[winner] = 1
+        else:
+            if equal:
+                stand[winner] = stand.get(winner) + 2
+            else:
+                stand[winner] = stand.get(winner) + 1
+    write_stand(stand)
 
 
 def getstand():
@@ -113,7 +136,7 @@ def getstand():
 
 
 if __name__ == '__main__':
-    config = toml.load('config.toml')
+    config = toml.load("ressources/config.toml")
 
     bot_username = config['bot_username']
     channel_name = config['channel_name']
@@ -133,8 +156,7 @@ if __name__ == '__main__':
 
     stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
 
-    with open("stand.json", "w") as fp:
-        json.dump(stand, fp)
+    write_stand(stand)
 
     while True:
         data = irc.recv(1024)
@@ -153,27 +175,12 @@ if __name__ == '__main__':
                         send_chat(irc, 'derabiRraga', channel_name)
                         user, equal = schlagdenabi(irc)
                         if user is not None:
-                            with open('stand.json', 'r') as fp:
-                                stand = json.load(fp)
-                            for winner in user:
-                                if winner not in stand:
-                                    if equal:
-                                        stand[winner] = 2
-                                    else:
-                                        stand[winner] = 1
-                                else:
-                                    if equal:
-                                        stand[winner] = stand.get(winner) + 2
-                                    else:
-                                        stand[winner] = stand.get(winner) + 1
-                            with open("stand.json", "w") as fp:
-                                json.dump(stand, fp)
+                            give_Winner_Points(user, equal)
                         else:
                             send_chat(irc, "Ach be keiner hat mitgemacht", channel_name)
                     if command == '!stand':
                         CalculateStand(irc, channel_name, getMessage(line))
                     if command == '!reset':
                         stand.clear()
-                        with open("stand.json", "w") as fp:
-                            json.dump(stand, fp)
+                        write_stand(stand)
                         send_chat(irc, 'Reset erfolgreich', channel_name)

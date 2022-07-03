@@ -5,7 +5,7 @@ import toml
 
 import twitch
 
-config = toml.load('config.toml')
+config = toml.load('ressources/config.toml')
 
 bot_username = config['bot_username']
 channel_name = config['channel_name']
