@@ -58,6 +58,8 @@ def handle_chat(raw_message: str):
         return "!reset"
     if user == admin and message == "!endstand":
         return "!endstand"
+    if user == admin and message.split(" ")[0] == "!give":
+        return "!give"
     return False
 
 
@@ -89,6 +91,8 @@ def CalculateStand(irc, channel_name, line):
         send_chat(irc, 'Es gibt noch keinen Spielstand', channel_name)
     elif len(line.split(" ")) == 2:
         key = str(line.split(" ")[1]).lower()
+        if key.startswith("@"):
+            key = key.split("@")[1]
         if key in stand.keys():
             punkteUser = str(key).lower() + " = " + str(stand[key])
             send_chat(irc, punkteUser, channel_name)
@@ -103,6 +107,34 @@ def CalculateStand(irc, channel_name, line):
             spielstand = spielstand + punktePerson
         send_chat(irc, spielstand, channel_name)
     write_stand(stand)
+
+
+def give_Points(irc, channel_name, line):
+    stand = load_Stand()
+    if len(line.split(" ")) == 3:
+        key = str(line.split(" ")[1]).lower()
+        if key.startswith("@"):
+            key = key.split("@")[1]
+        if key in stand.keys():
+            number = parseNumber(line.split(" ")[2])
+            if number == None or number == 0:
+                send_chat(irc, "Ach be du bekommst keine Punkte", channel_name)
+            else:
+                stand[key] = stand.get(key) + number
+                write_stand(stand)
+                if number > 1:
+                    punkteUser = str(key).lower() + " wurden " + str(number) + " Punkte gegeben."
+                elif number == 1:
+                    punkteUser = str(key).lower() + " wurde einen Punkte gegeben."
+                elif number == -1:
+                    punkteUser = str(key).lower() + " wurde einen Punkte abgezogen."
+                else:
+                    punkteUser = str(key).lower() + " wurden " + str(abs(number)) + " Punkte abgezogen."
+                send_chat(irc, punkteUser, channel_name)
+        else:
+            send_chat(irc, "Ungültiger Benutzername", channel_name)
+    else:
+        send_chat(irc,"Ungültiges Format: !give [username] [points]",channel_name)
 
 
 def load_Stand():
@@ -131,6 +163,13 @@ def give_Winner_Points(user, equal):
     write_stand(stand)
 
 
+def resetStand(irc, channel_name):
+    stand = load_Stand()
+    stand.clear()
+    write_stand(stand)
+    send_chat(irc, 'Reset erfolgreich', channel_name)
+
+
 def getstand():
     return stand
 
@@ -154,7 +193,7 @@ if __name__ == '__main__':
 
     send_chat(irc, 'Bot is running', channel_name)
 
-    stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
+    stand: dict[Union[list[Any], Any], Union[int, Any]] = {"yarissi": 1, "freeyarissi": 3}
 
     write_stand(stand)
 
@@ -181,6 +220,6 @@ if __name__ == '__main__':
                     if command == '!stand':
                         CalculateStand(irc, channel_name, getMessage(line))
                     if command == '!reset':
-                        stand.clear()
-                        write_stand(stand)
-                        send_chat(irc, 'Reset erfolgreich', channel_name)
+                        resetStand(irc, channel_name)
+                    if command == '!give':
+                        give_Points(irc, channel_name, getMessage(line))

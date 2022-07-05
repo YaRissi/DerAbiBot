@@ -21,12 +21,15 @@ def collectSolution(irc: ssl.SSLSocket):
                 twitch.send_pong(irc)
             else:
                 components = line.split()
-                command = components[1]
+                text = components[1]
 
-                if command == 'PRIVMSG':
-                    if "!stand" == twitch.getMessage(line).split(" ")[0]:
+                if text == 'PRIVMSG':
+                    command = twitch.getMessage(line).split(" ")[0]
+                    if "!stand" == command:
                         twitch.CalculateStand(irc, channel_name, twitch.getMessage(line))
                     name = twitch.getName(line)
+                    if name == twitch.admin and command == '!reset':
+                        twitch.resetStand(irc, channel_name)
                     number = twitch.parseNumber(twitch.getMessage(line))
                     if name == twitch.admin and number is not None:
                         pprint("Lösung: " + str(number))
@@ -45,15 +48,19 @@ def collectData(irc: ssl.SSLSocket):
                 twitch.send_pong(irc)
             else:
                 components = line.split()
-                command = components[1]
+                text = components[1]
 
-                if command == 'PRIVMSG':
+                if text == 'PRIVMSG':
                     message = twitch.getMessage(line)
                     name = twitch.getName(line)
-                    if "!stand" == twitch.getMessage(line).split(" ")[0]:
+                    command = twitch.getMessage(line).split(" ")[0]
+                    if "!stand" == command:
                         twitch.CalculateStand(irc, channel_name, twitch.getMessage(line))
                     if name == twitch.admin and (message == 'ende' or message == 'Ende' or message == 'ENDE'):
+                        twitch.send_chat(irc, 'derabiRraga', channel_name)
                         return users, numbers
+                    if name == twitch.admin and command == '!reset':
+                        twitch.resetStand(irc, channel_name)
                     number = twitch.parseNumber(message)
                     if name not in users and number is not None:
                         users.append(name)
@@ -67,14 +74,16 @@ def determineWinner(users: list, numbers: list, solution: int):
     WinnerIndex = []
     i = 0
     for value in numbers:
-        DifferenceOfValue = abs(solution - value)
-        if DifferenceOfValue < actualDifference:
-            actualDifference = DifferenceOfValue
-            if len(WinnerIndex) > 0:
-                WinnerIndex.clear()
-            WinnerIndex.append(i)
-        elif DifferenceOfValue == actualDifference:
-            WinnerIndex.append(i)
+        print(value)
+        if value >= 0:
+            DifferenceOfValue = abs(solution - value)
+            if DifferenceOfValue < actualDifference:
+                actualDifference = DifferenceOfValue
+                if len(WinnerIndex) > 0:
+                    WinnerIndex.clear()
+                WinnerIndex.append(i)
+            elif DifferenceOfValue == actualDifference:
+                WinnerIndex.append(i)
         i += 1
     winner = []
     equal = False
