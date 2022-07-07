@@ -1,12 +1,15 @@
 import ssl
 from typing import Union, Any
 
+import requests as requests
 import toml
 import socket
 
 import json
 
-from TwitchCommands import schlagdenabi_Runde
+from TwitchCommands import schlagdenabi_Runde, small_commands
+from TwitchCommands.side_commands_schlagdenabi import CalculateStand, resetStand, give_Points, write_stand, \
+    give_Winner_Points
 
 admin = 'yarissi'
 
@@ -32,6 +35,9 @@ def getName(raw_message: str):
 def getMessage(raw_message: str):
     components = raw_message.split()
     message = ' '.join(components[3:])[1:]
+    error = '\U000e0000'
+    if error in message:
+        return message.split(" ")[0]
     return message
 
 
@@ -42,25 +48,6 @@ def parseNumber(msg):
     except:
         return None
 
-
-def handle_chat(raw_message: str):
-    components = raw_message.split()
-
-    user, host = components[0].split('!')[1].split('@')
-    channel = components[2]
-    message = ' '.join(components[3:])[1:]
-
-    if user == admin and (message == "start" or message == "Start" or message == "START"):
-        return 'start'
-    if message.split(" ")[0] == "!stand":
-        return "!stand"
-    if user == admin and message == "!reset":
-        return "!reset"
-    if user == admin and message == "!endstand":
-        return "!endstand"
-    if user == admin and message.split(" ")[0] == "!give":
-        return "!give"
-    return False
 
 
 def schlagdenabi(irc):
@@ -85,89 +72,42 @@ def schlagdenabi(irc):
     return winnerList, equal
 
 
-def CalculateStand(irc, channel_name, line):
-    stand = load_Stand()
-    if len(stand) == 0:
-        send_chat(irc, 'Es gibt noch keinen Spielstand', channel_name)
-    elif len(line.split(" ")) == 2:
-        key = str(line.split(" ")[1]).lower()
-        if key.startswith("@"):
-            key = key.split("@")[1]
-        if key in stand.keys():
-            punkteUser = str(key).lower() + " = " + str(stand[key])
-            send_chat(irc, punkteUser, channel_name)
-        else:
-            CalculateStand(irc, channel_name, line.split(" ")[0])
-    else:
-        spielstand = ""
-        for key in sorted(stand.items(), key=lambda item: item[1], reverse=True):
-            name = str(key).split("'")[1]
-            punkte = str(key).split(", ")[1].split(")")[0]
-            punktePerson = name + " = " + punkte + " "
-            spielstand = spielstand + punktePerson
-        send_chat(irc, spielstand, channel_name)
-    write_stand(stand)
+def checkCommands(irc, channel_name, raw_message):
+    components = raw_message.split()
+
+    user, host = components[0].split('!')[1].split('@')
+    message = ' '.join(components[3:])[1:]
+
+    if user == admin and (message == "start" or message == "Start" or message == "START"):
+        return 'start'
+    if message.split(" ")[0] == "!stand":
+        CalculateStand(irc, channel_name, getMessage(raw_message))
+    if message.split(" ")[0] == "!fight":
+        small_commands.fight(irc,channel_name, raw_message)
+    if message.split(" ")[0] == "!blöff":
+        small_commands.blöff(irc, channel_name, raw_message)
+    if user == admin and message == "!reset":
+        resetStand(irc, channel_name)
+    if user == admin and message == "!endstand":
+        return "!endstand"
+    if message == "!help":
+        send_chat(irc, "Help Nachricht", channel_name)
+    if user == admin and message.split(" ")[0] == "!give":
+        give_Points(irc, channel_name, getMessage(raw_message))
+    return False
 
 
-def give_Points(irc, channel_name, line):
-    stand = load_Stand()
-    if len(line.split(" ")) == 3:
-        key = str(line.split(" ")[1]).lower()
-        if key.startswith("@"):
-            key = key.split("@")[1]
-        if key in stand.keys():
-            number = parseNumber(line.split(" ")[2])
-            if number == None or number == 0:
-                send_chat(irc, "Ach be du bekommst keine Punkte", channel_name)
-            else:
-                stand[key] = stand.get(key) + number
-                write_stand(stand)
-                if number > 1:
-                    punkteUser = str(key).lower() + " wurden " + str(number) + " Punkte gegeben."
-                elif number == 1:
-                    punkteUser = str(key).lower() + " wurde einen Punkte gegeben."
-                elif number == -1:
-                    punkteUser = str(key).lower() + " wurde einen Punkte abgezogen."
-                else:
-                    punkteUser = str(key).lower() + " wurden " + str(abs(number)) + " Punkte abgezogen."
-                send_chat(irc, punkteUser, channel_name)
-        else:
-            send_chat(irc, "Ungültiger Benutzername", channel_name)
-    else:
-        send_chat(irc,"Ungültiges Format: !give [username] [points]",channel_name)
+def getUserList(channel_name):
+    response = requests.get(f"https://tmi.twitch.tv/group/user/{channel_name}/chatters")
 
+    chatter = json.loads(response.text)['chatters']
+    listChatter = []
 
-def load_Stand():
-    with open('ressources/stand.json', 'r') as fp:
-        return json.load(fp)
+    for type in chatter:
+        for chatty in chatter[type]:
+            listChatter.append(chatty)
 
-
-def write_stand(stand):
-    with open("ressources/stand.json", "w") as fp:
-        json.dump(stand, fp)
-
-
-def give_Winner_Points(user, equal):
-    stand = load_Stand()
-    for winner in user:
-        if winner not in stand:
-            if equal:
-                stand[winner] = 2
-            else:
-                stand[winner] = 1
-        else:
-            if equal:
-                stand[winner] = stand.get(winner) + 2
-            else:
-                stand[winner] = stand.get(winner) + 1
-    write_stand(stand)
-
-
-def resetStand(irc, channel_name):
-    stand = load_Stand()
-    stand.clear()
-    write_stand(stand)
-    send_chat(irc, 'Reset erfolgreich', channel_name)
+    return listChatter
 
 
 def getstand():
@@ -209,7 +149,7 @@ if __name__ == '__main__':
                 text = components[1]
 
                 if text == 'PRIVMSG':
-                    command = handle_chat(line)
+                    command = checkCommands(irc, channel_name, line)
                     if command == 'start':
                         send_chat(irc, 'derabiRraga', channel_name)
                         user, equal = schlagdenabi(irc)
@@ -217,9 +157,3 @@ if __name__ == '__main__':
                             give_Winner_Points(user, equal)
                         else:
                             send_chat(irc, "Ach be keiner hat mitgemacht", channel_name)
-                    if command == '!stand':
-                        CalculateStand(irc, channel_name, getMessage(line))
-                    if command == '!reset':
-                        resetStand(irc, channel_name)
-                    if command == '!give':
-                        give_Points(irc, channel_name, getMessage(line))

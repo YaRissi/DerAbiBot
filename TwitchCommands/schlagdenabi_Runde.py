@@ -24,12 +24,8 @@ def collectSolution(irc: ssl.SSLSocket):
                 text = components[1]
 
                 if text == 'PRIVMSG':
-                    command = twitch.getMessage(line).split(" ")[0]
-                    if "!stand" == command:
-                        twitch.CalculateStand(irc, channel_name, twitch.getMessage(line))
+                    twitch.checkCommands(irc, channel_name, line)
                     name = twitch.getName(line)
-                    if name == twitch.admin and command == '!reset':
-                        twitch.resetStand(irc, channel_name)
                     number = twitch.parseNumber(twitch.getMessage(line))
                     if name == twitch.admin and number is not None:
                         pprint("Lösung: " + str(number))
@@ -53,14 +49,10 @@ def collectData(irc: ssl.SSLSocket):
                 if text == 'PRIVMSG':
                     message = twitch.getMessage(line)
                     name = twitch.getName(line)
-                    command = twitch.getMessage(line).split(" ")[0]
-                    if "!stand" == command:
-                        twitch.CalculateStand(irc, channel_name, twitch.getMessage(line))
+                    twitch.checkCommands(irc, channel_name, line)
                     if name == twitch.admin and (message == 'ende' or message == 'Ende' or message == 'ENDE'):
                         twitch.send_chat(irc, 'derabiRraga', channel_name)
                         return users, numbers
-                    if name == twitch.admin and command == '!reset':
-                        twitch.resetStand(irc, channel_name)
                     number = twitch.parseNumber(message)
                     if name not in users and number is not None:
                         users.append(name)
