@@ -5,13 +5,14 @@ import requests as requests
 import toml
 import socket
 
-import json
-
 from TwitchCommands import schlagdenabi_Runde, small_commands
 from TwitchCommands.side_commands_schlagdenabi import CalculateStand, resetStand, give_Points, write_stand, \
     give_Winner_Points
 
-admin = 'yarissi'
+import json
+
+
+admin = 'xxxxxxx'
 
 
 def send(irc: ssl.SSLSocket, message: str):
@@ -86,12 +87,12 @@ def checkCommands(irc, channel_name, raw_message):
         small_commands.fight(irc,channel_name, raw_message)
     if message.split(" ")[0] == "!blöff":
         small_commands.blöff(irc, channel_name, raw_message)
+    if message == "!help":
+        send_chat(irc, "Hier kommt ihr zum Code und den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot", channel_name)
     if user == admin and message == "!reset":
         resetStand(irc, channel_name)
     if user == admin and message == "!endstand":
         return "!endstand"
-    if message == "!help":
-        send_chat(irc, "Help Nachricht", channel_name)
     if user == admin and message.split(" ")[0] == "!give":
         give_Points(irc, channel_name, getMessage(raw_message))
     return False
