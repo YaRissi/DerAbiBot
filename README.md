@@ -40,6 +40,7 @@ The winner/winners get a point added to their score. For a precision landing you
     - *!help:* Refers to this repository
     - *!blöff:* How much blöff are you?
     - *!fight [user]:* Would you win in a fight against this user?
+    - *!lieben {user}:* Picks a random user in the chat
     - **Only for admin:**
       - *!reset:* Resets the current score
       - *!give [user] [points]:* Gives the user a specific amount of points

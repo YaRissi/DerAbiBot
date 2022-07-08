@@ -87,6 +87,8 @@ def checkCommands(irc, channel_name, raw_message):
         small_commands.fight(irc,channel_name, raw_message)
     if message.split(" ")[0] == "!blöff":
         small_commands.blöff(irc, channel_name, raw_message)
+    if message.split(" ")[0] == "!lieben":
+        small_commands.lieben(irc, channel_name, raw_message)
     if message == "!help":
         send_chat(irc, "Hier kommt ihr zu den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot#dokumentation", channel_name)
     if user == admin and message == "!reset":

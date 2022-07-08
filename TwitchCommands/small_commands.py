@@ -24,16 +24,31 @@ def fight(irc, channel_name, raw_message):
         twitch.send_chat(irc, message, channel_name)
 
 
-def blöff(irc, channel_name, raw_message):
+def touserProeccseeing(raw_message):
     name = twitch.getName(raw_message)
     line = twitch.getMessage(raw_message)
-    pprint(line)
     if len(line.split(" ")) == 2:
         name = str(line.split(" ")[1]).lower()
-    if name == ("yarissi" or "der_abi__"):
+    if name.startswith("@"):
+        name = name.split("@")[1]
+    return name
+
+def blöff(irc, channel_name, raw_message):
+    name = touserProeccseeing(raw_message)
+    pprint(name)
+    if name == "yarissi" or name == "der_abi__":
         message = f"{name} ist zu 0% blöff. "
         twitch.send_chat(irc, message, channel_name)
         return
     rando = random.randint(0, 100)
     message = f"{name} ist zu {rando}% blöff. "
+    twitch.send_chat(irc, message, channel_name)
+
+
+def lieben(irc, channel_name, raw_message):
+    name = touserProeccseeing(raw_message)
+    pprint(name)
+    userList = twitch.getUserList(channel_name)
+    rando = random.randint(0, len(userList) - 1)
+    message = f"{name} liebt {userList[rando]}"
     twitch.send_chat(irc, message, channel_name)
