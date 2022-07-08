@@ -30,7 +30,7 @@ def blöff(irc, channel_name, raw_message):
     pprint(line)
     if len(line.split(" ")) == 2:
         name = str(line.split(" ")[1]).lower()
-    if name == "yarissi":
+    if name == ("yarissi" or "der_abi__"):
         message = f"{name} ist zu 0% blöff. "
         twitch.send_chat(irc, message, channel_name)
         return

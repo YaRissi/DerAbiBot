@@ -50,7 +50,7 @@ def collectData(irc: ssl.SSLSocket):
                     message = twitch.getMessage(line)
                     name = twitch.getName(line)
                     twitch.checkCommands(irc, channel_name, line)
-                    if name == twitch.admin and (message == 'ende' or message == 'Ende' or message == 'ENDE'):
+                    if name == twitch.admin and message.lower() == 'ende':
                         twitch.send_chat(irc, 'derabiRraga', channel_name)
                         return users, numbers
                     number = twitch.parseNumber(message)

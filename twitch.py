@@ -12,7 +12,7 @@ from TwitchCommands.side_commands_schlagdenabi import CalculateStand, resetStand
 import json
 
 
-admin = 'xxxxxxx'
+admin = 'yarissi'
 
 
 def send(irc: ssl.SSLSocket, message: str):
@@ -77,9 +77,9 @@ def checkCommands(irc, channel_name, raw_message):
     components = raw_message.split()
 
     user, host = components[0].split('!')[1].split('@')
-    message = ' '.join(components[3:])[1:]
+    message = ' '.join(components[3:])[1:].lower()
 
-    if user == admin and (message == "start" or message == "Start" or message == "START"):
+    if user == admin and message == "start":
         return 'start'
     if message.split(" ")[0] == "!stand":
         CalculateStand(irc, channel_name, getMessage(raw_message))
@@ -88,7 +88,7 @@ def checkCommands(irc, channel_name, raw_message):
     if message.split(" ")[0] == "!blöff":
         small_commands.blöff(irc, channel_name, raw_message)
     if message == "!help":
-        send_chat(irc, "Hier kommt ihr zum Code und den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot", channel_name)
+        send_chat(irc, "Hier kommt ihr zu den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot#dokumentation", channel_name)
     if user == admin and message == "!reset":
         resetStand(irc, channel_name)
     if user == admin and message == "!endstand":

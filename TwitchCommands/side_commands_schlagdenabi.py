@@ -45,7 +45,7 @@ def CalculateStand(irc, channel_name, line):
         if key.startswith("@"):
             key = key.split("@")[1]
         if key in stand.keys():
-            punkteUser = str(key).lower() + " = " + str(stand[key])
+            punkteUser = str(key) + " = " + str(stand[key])
             twitch.send_chat(irc, punkteUser, channel_name)
         else:
             CalculateStand(irc, channel_name, line.split(" ")[0])
@@ -88,13 +88,13 @@ def give_Points(irc, channel_name, line):
                         return
                 write_stand(stand)
                 if number > 1:
-                    punkteUser = str(key).lower() + " wurden " + str(number) + " Punkte gegeben."
+                    punkteUser = str(key) + " wurden " + str(number) + " Punkte gegeben."
                 elif number == 1:
-                    punkteUser = str(key).lower() + " wurde einen Punkte gegeben."
+                    punkteUser = str(key) + " wurde einen Punkte gegeben."
                 elif number == -1:
-                    punkteUser = str(key).lower() + " wurde einen Punkte abgezogen."
+                    punkteUser = str(key) + " wurde einen Punkte abgezogen."
                 else:
-                    punkteUser = str(key).lower() + " wurden " + str(abs(number)) + " Punkte abgezogen."
+                    punkteUser = str(key) + " wurden " + str(abs(number)) + " Punkte abgezogen."
                 twitch.send_chat(irc, punkteUser, channel_name)
         else:
             twitch.send_chat(irc, "Ungültiger Benutzername", channel_name)
