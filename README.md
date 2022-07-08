@@ -30,7 +30,7 @@ admin = 'xxxxxxx'
 ## Dokumentation
 
 - *Keywords: Start and Ende* These two keywords mark the start and the end of each round. 
-Its irrelevant,if you write them all in uppercase or all in lowercase.\
+Its irrelevant, if you write them all in uppercase or all in lowercase.\
 After the admin send the mesage "Ende", he can enter the solution in the chat.\
 The Bot outputs the winner of this round and even tells you, if the winner/winners hit a precision landing.\
 The winner/winners get a point added to their score. For a precision landing you get two points.
