@@ -1,4 +1,4 @@
-# [![DerAbiBot](img/lost.png)](https://github.com/yarissi/derabibot)
+[![DerAbiBot](img/lost.png)](https://github.com/yarissi/derabibot)
 
 
 # Der Abi Bot
