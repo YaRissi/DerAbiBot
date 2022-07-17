@@ -52,3 +52,4 @@ def lieben(irc, channel_name, raw_message):
     rando = random.randint(0, len(userList) - 1)
     message = f"{name} liebt {userList[rando]}"
     twitch.send_chat(irc, message, channel_name)
+

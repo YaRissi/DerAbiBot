@@ -12,9 +12,6 @@ from TwitchCommands.side_commands_schlagdenabi import CalculateStand, resetStand
 import json
 
 
-admin = 'yarissi'
-
-
 def send(irc: ssl.SSLSocket, message: str):
     irc.send(bytes(f'{message}\r\n', 'UTF-8'))
 
@@ -50,7 +47,6 @@ def parseNumber(msg):
         return None
 
 
-
 def schlagdenabi(irc):
     users, numbers = schlagdenabi_Runde.collectData(irc)
     if len(users) == 0:
@@ -79,23 +75,27 @@ def checkCommands(irc, channel_name, raw_message):
     user, host = components[0].split('!')[1].split('@')
     message = ' '.join(components[3:])[1:].lower()
 
-    if user == admin and message == "start":
+    if checkAdmins(user) and message == "start":
         return 'start'
     if message.split(" ")[0] == "!stand":
         CalculateStand(irc, channel_name, getMessage(raw_message))
-    if message.split(" ")[0] == "!fight":
-        small_commands.fight(irc,channel_name, raw_message)
-    if message.split(" ")[0] == "!blöff":
-        small_commands.blöff(irc, channel_name, raw_message)
-    if message.split(" ")[0] == "!lieben":
-        small_commands.lieben(irc, channel_name, raw_message)
+    # if message.split(" ")[0] == "!fight":
+    #    small_commands.fight(irc, channel_name, raw_message)
+    # if message.split(" ")[0] == "!blöff":
+    #    small_commands.blöff(irc, channel_name, raw_message)
+    # if message.split(" ")[0] == "!lieben":
+    #    small_commands.lieben(irc, channel_name, raw_message)
     if message == "!help":
-        send_chat(irc, "Hier kommt ihr zu den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot#dokumentation", channel_name)
-    if user == admin and message == "!reset":
+        send_chat(irc, "Hier kommt ihr zu den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot#dokumentation",
+                  channel_name)
+    if message == "!streams":
+        send_chat(irc, f"Der Abi hat schon {getStreams()} mal gestreamt.",
+                  channel_name)
+    if checkAdmins(user) and message == "!reset":
         resetStand(irc, channel_name)
-    if user == admin and message == "!endstand":
+    if checkAdmins(user) and message == "!endstand":
         return "!endstand"
-    if user == admin and message.split(" ")[0] == "!give":
+    if checkAdmins(user) and message.split(" ")[0] == "!give":
         give_Points(irc, channel_name, getMessage(raw_message))
     return False
 
@@ -111,6 +111,31 @@ def getUserList(channel_name):
             listChatter.append(chatty)
 
     return listChatter
+
+
+def checkAdmins(user):
+    config = toml.load("ressources/config.toml")
+    channel_name = config['channel_name']
+    # response = requests.get(f"https://tmi.twitch.tv/group/user/{channel_name}/chatters")
+    # chatter = json.loads(response.text)['chatters']['moderators']
+    chatter = ['yarissi', 'enes52_bjk', 'dilarax57', 'kassim_almaliky']
+
+    return user in chatter or user == channel_name
+
+
+def getStreams():
+    import re
+    import cfscrape
+
+    url = "https://twitchtracker.com/der_abi__/statistics"
+
+    scraper = cfscrape.create_scraper()
+
+    text = scraper.get(url).content
+
+    match = re.findall(r"<span[^>]*>[^>]*</span>", str(text))
+
+    return match[15].split("<")[1].split(">")[1]
 
 
 def getstand():
@@ -134,9 +159,9 @@ if __name__ == '__main__':
     send(irc, f'NICK {bot_username}')
     send(irc, f'JOIN #{channel_name}')
 
-    send_chat(irc, 'Bot is running', channel_name)
+    send_chat(irc, 'Bot is running MrDestructoid', channel_name)
 
-    stand: dict[Union[list[Any], Any], Union[int, Any]] = {"yarissi": 1, "freeyarissi": 3}
+    stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
 
     write_stand(stand)
 
