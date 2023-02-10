@@ -12,7 +12,7 @@ def fight(irc, channel_name, raw_message):
         other_user = str(line.split(" ")[1]).lower()
         if other_user.startswith("@"):
             other_user = other_user.split("@")[1]
-        if name == "test":
+        if name == "der_abi__":
             message = f"{name} hat im 1vs1 gegen {other_user} mit einem dicken K.O. gewonnen. "
             twitch.send_chat(irc, message, channel_name)
             return

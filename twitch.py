@@ -1,15 +1,13 @@
+import json
+import socket
 import ssl
 from typing import Union, Any
 
-import requests as requests
+import requests as requests 
 import toml
-import socket
 
-from TwitchCommands import schlagdenabi_Runde, small_commands
-from TwitchCommands.side_commands_schlagdenabi import CalculateStand, resetStand, give_Points, write_stand, \
-    give_Winner_Points
-
-import json
+from TwitchCommands import schlagdenabi_Runde
+from TwitchCommands.side_commands_schlagdenabi import *
 
 
 def send(irc: ssl.SSLSocket, message: str):
@@ -69,6 +67,28 @@ def schlagdenabi(irc):
     return winnerList, equal
 
 
+def schlagdenabiEqual(irc, winners):
+    users, numbers = schlagdenabi_Runde.collectDataEqual(irc, winners)
+    if len(users) == 0:
+        return None, None
+    solution = schlagdenabi_Runde.collectSolution(irc)
+    winnerList, equal = schlagdenabi_Runde.determineWinner(users, numbers, solution)
+    gewinner = ' '.join(winnerList)
+    if len(winnerList) == 1:
+        if equal:
+            msg = "/me Der Gewinner mit Punktlandung ist: " + gewinner
+        else:
+            msg = "/me Der Gewinner ist: " + gewinner
+        send_chat(irc, msg, channel_name)
+    if len(winnerList) > 1:
+        if equal:
+            msg = "/me Die Gewinner mit Punktlandung sind: " + gewinner
+        else:
+            msg = "/me Die Gewinner sind: " + gewinner
+        send_chat(irc, msg, channel_name)
+    return winnerList, equal
+
+
 def checkCommands(irc, channel_name, raw_message):
     components = raw_message.split()
 
@@ -88,8 +108,10 @@ def checkCommands(irc, channel_name, raw_message):
     if message == "!help":
         send_chat(irc, "Hier kommt ihr zu den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot#dokumentation",
                   channel_name)
+    if message == "!runde":
+        send_chat(irc, f"Es wurde gerade die {readZähler()}. Runde gespielt", channel_name)
     if message == "!streams":
-        send_chat(irc, f"Der Abi hat schon {getStreams()} mal gestreamt.",
+        send_chat(irc, f"Der Abi hat schon {getStreams(channel_name)} mal gestreamt.",
                   channel_name)
     if checkAdmins(user) and message == "!reset":
         resetStand(irc, channel_name)
@@ -113,6 +135,20 @@ def getUserList(channel_name):
     return listChatter
 
 
+def checkUserExist(user):
+    import requests
+
+    headers = {
+        'Authorization': 'Bearer yehy5oh2dy6kc54ft61ioz7xmyvdym',
+        'Client-Id': 'gp762nuuoqcoxypju8c569th9wz7q5',
+    }
+
+    response = requests.get(f'https://api.twitch.tv/helix/users?login={user}', headers=headers)
+    test = json.loads(response.text)
+
+    return len(test["data"]) == 1
+
+
 def checkAdmins(user):
     config = toml.load("ressources/config.toml")
     channel_name = config['channel_name']
@@ -123,11 +159,11 @@ def checkAdmins(user):
     return user in chatter or user == channel_name
 
 
-def getStreams():
+def getStreams(channel_name):
     import re
     import cfscrape
 
-    url = "https://twitchtracker.com/der_abi__/statistics"
+    url = f"https://twitchtracker.com/{channel_name}/statistics"
 
     scraper = cfscrape.create_scraper()
 
@@ -163,6 +199,7 @@ if __name__ == '__main__':
 
     stand: dict[Union[list[Any], Any], Union[int, Any]] = {}
 
+    writeZähler(0)
     write_stand(stand)
 
     while True:
@@ -181,7 +218,10 @@ if __name__ == '__main__':
                     if command == 'start':
                         send_chat(irc, 'derabiRraga', channel_name)
                         user, equal = schlagdenabi(irc)
-                        if user is not None:
+                        while user is not None and len(user) > 1:
+                            user, equal = schlagdenabiEqual(irc, user)
+                        if user is not None and len(user) == 1:
+                            incrementRundenZähler()
                             give_Winner_Points(user, equal)
-                        else:
+                        elif user is None:
                             send_chat(irc, "Ach be keiner hat mitgemacht", channel_name)

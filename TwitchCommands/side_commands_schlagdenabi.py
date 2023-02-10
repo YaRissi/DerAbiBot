@@ -33,7 +33,26 @@ def resetStand(irc, channel_name):
     stand = load_Stand()
     stand.clear()
     write_stand(stand)
+    writeZähler(0)
     twitch.send_chat(irc, 'Reset erfolgreich', channel_name)
+
+
+def writeZähler(zaehler: int):
+    text_file = open("ressources/rundenzähler.txt", "w")
+    text_file.write(str(zaehler))
+    text_file.close()
+
+
+def readZähler():
+    text_file = open("ressources/rundenzähler.txt", "r")
+    data = text_file.read()
+    return data
+
+
+def incrementRundenZähler():
+    zaehler = int(readZähler())
+    zaehler = zaehler + 1
+    writeZähler(zaehler)
 
 
 def CalculateStand(irc, channel_name, line):
@@ -66,7 +85,7 @@ def give_Points(irc, channel_name, line):
         key = str(line.split(" ")[1]).lower()
         if key.startswith("@"):
             key = key.split("@")[1]
-        if key in stand.keys() or key in twitch.getUserList(channel_name):
+        if key in stand.keys() or twitch.checkUserExist(key):
             number = twitch.parseNumber(line.split(" ")[2])
             # Nummer ungültig oder Nummer gleich 0
             if number is None or number == 0:
