@@ -38,7 +38,7 @@ Its irrelevant, if you write them all in uppercase or all in lowercase.\
 After the admin send the message "Ende", he can enter the solution in the chat.\
 The Bot outputs the winner of this round and even tells you, if the winner hit a precision landing.\
 The winner get a point added to their score. For a precision landing you get two points.\
-If there are multiple winners, the round goes on to the "stechen", there is no need to write start again.
+If there are multiple winners, the round goes on to the play-offs, there is no need to write start again.
 In this round, only the winners of the previous round can participate. At the end it's similar to a normal round.
 The admins send the message "Ende" and the solution in the chat. Only the winner of this round gets the points.
 - *Commands:*
