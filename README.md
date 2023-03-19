@@ -45,9 +45,6 @@ The admins send the message "Ende" and the solution in the chat. Only the winner
     - *!stand:* Sends the current score in the chat
     - *!stand [user]:* Give the score of a specific user
     - *!help:* Refers to this repository
-    - *!blöff:* How much blöff are you?
-    - *!fight [user]:* Would you win in a fight against this user?
-    - *!lieben [user]:* Picks a random user in the chat to be your love of your life
     - *!runde:* Send in which round you currently are in the chat
     - **Only for admin:**
       - *!reset:* Resets the current score
