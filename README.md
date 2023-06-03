@@ -38,16 +38,13 @@ Its irrelevant, if you write them all in uppercase or all in lowercase.\
 After the admin send the message "Ende", he can enter the solution in the chat.\
 The Bot outputs the winner of this round and even tells you, if the winner hit a precision landing.\
 The winner get a point added to their score. For a precision landing you get two points.\
-If there are multiple winners, the round goes on to the "stechen", there is no need to write start again.
+If there are multiple winners, the round goes on to the play-offs, there is no need to write start again.
 In this round, only the winners of the previous round can participate. At the end it's similar to a normal round.
 The admins send the message "Ende" and the solution in the chat. Only the winner of this round gets the points.
 - *Commands:*
     - *!stand:* Sends the current score in the chat
     - *!stand [user]:* Give the score of a specific user
     - *!help:* Refers to this repository
-    - *!blöff:* How much blöff are you?
-    - *!fight [user]:* Would you win in a fight against this user?
-    - *!lieben [user]:* Picks a random user in the chat to be your love of your life
     - *!runde:* Send in which round you currently are in the chat
     - **Only for admin:**
       - *!reset:* Resets the current score
