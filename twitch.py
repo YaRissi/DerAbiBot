@@ -105,7 +105,7 @@ def checkCommands(irc, channel_name, raw_message):
     #    small_commands.blöff(irc, channel_name, raw_message)
     # if message.split(" ")[0] == "!lieben":
     #    small_commands.lieben(irc, channel_name, raw_message)
-    if message == "!help":
+    if message == "!commands":
         send_chat(irc, "Hier kommt ihr zu den Commands vom Abi Bot: https://github.com/YaRissi/DerAbiBot#dokumentation",
                   channel_name)
     if message == "!runde":
@@ -161,17 +161,28 @@ def checkAdmins(user):
 
 def getStreams(channel_name):
     import re
-    import cfscrape
+    import cloudscraper
+    from bs4 import BeautifulSoup
 
-    url = f"https://twitchtracker.com/{channel_name}/statistics"
+    scraper = cloudscraper.create_scraper(browser={'browser': 'firefox', 'platform': 'windows', 'mobile': False})
 
-    scraper = cfscrape.create_scraper()
+    html = scraper.get(f"https://sullygnome.com/channel/{channel_name}/2021").content
+    soup = BeautifulSoup(html, 'html.parser')
+    match = re.findall('<div class="InfoStatPanelTLCell"[^>]*>[^>]*</div>', str(soup))
+    firstyear_streams = match[5].split("<")[1].split(">")[1]
 
-    text = scraper.get(url).content
+    html = scraper.get(f"https://sullygnome.com/channel/{channel_name}/2022").content
+    soup = BeautifulSoup(html, 'html.parser')
+    match = re.findall('<div class="InfoStatPanelTLCell"[^>]*>[^>]*</div>', str(soup))
+    secondyear_streams = match[5].split("<")[1].split(">")[1]
 
-    match = re.findall(r"<span[^>]*>[^>]*</span>", str(text))
+    html = scraper.get(f"https://sullygnome.com/channel/{channel_name}/2023").content
+    soup = BeautifulSoup(html, 'html.parser')
+    match = re.findall('<div class="InfoStatPanelTLCell"[^>]*>[^>]*</div>', str(soup))
+    thirdyear_streams = match[5].split("<")[1].split(">")[1]
 
-    return match[15].split("<")[1].split(">")[1]
+    total_streams = int(firstyear_streams)+int(secondyear_streams)+int(thirdyear_streams)
+    return total_streams
 
 
 def getstand():

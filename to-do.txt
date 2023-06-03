@@ -1,0 +1,9 @@
+Rundezähler mit !runde
+
+Kein punkte dazu rechnen wenn mehrere gewinnen
+
+tunierbaum implmentiren und den stand ab einem gewissen punkt nicht mehr weiter führen
+
+!spieler alle spieler angeben die weiterkommen
+
+
